@@ -372,6 +372,46 @@
 
     .app-wrap { display: none; }
     .app-wrap.visible { display: block; }
+
+    /* --- MOBILE --- */
+    @media (max-width: 768px) {
+      header { padding: 0 12px; height: 48px; }
+      .hdr-stats { display: none; }
+      .hdr-sub { display: none; }
+      .hdr-date { font-size: 10px; }
+
+      .toolbar {
+        height: auto; min-height: 46px;
+        padding: 8px 12px;
+        flex-wrap: wrap; gap: 8px;
+      }
+      .search-input { width: 100%; }
+      .search-wrap { flex: 1 1 100%; }
+      .t-sep { display: none; }
+      .t-lbl { display: none; }
+      .pills { flex-wrap: wrap; }
+      .legend { display: none; }
+      .t-spacer { display: none; }
+
+      .board {
+        flex-direction: column;
+        padding: 10px 12px 20px;
+        gap: 16px;
+        overflow-x: visible;
+      }
+      .column { min-width: 0; max-width: none; width: 100%; }
+
+      .card { padding: 10px; }
+      .card-ogg { -webkit-line-clamp: 3; }
+
+      .overlay { padding: 8px; }
+      .modal { max-height: 95vh; border-radius: var(--r); }
+      .modal-hdr { padding: 12px 14px 10px; }
+      .modal-body { padding: 12px 14px; }
+      .info-grid { grid-template-columns: 1fr; }
+
+      .login-box { padding: 28px 20px 24px; margin: 0 12px; }
+    }
   </style>
 </head>
 <body>
