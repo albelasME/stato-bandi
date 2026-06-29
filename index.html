@@ -531,7 +531,7 @@ function mkCard(b) {
   card.className = `card ${cc}${(inv || urg==="past") && !esitoCard ? " muted" : ""} ${esitoCard}`.trim();
   card.dataset.meta = JSON.stringify(b);
 
-  const esitoBadge = (inv && b.esito) ? `<span class="badge ${esitoCls(b.esito)}">${esc(esitoLabel(b.esito))}</span>` : "";
+  const esitoBadge = inv ? `<span class="badge ${esitoCls(b.esito) || "esito-attesa"}">${esc(esitoLabel(b.esito) || "In attesa")}</span>` : "";
   const scadCls = inv ? "past" : urg;
 
   let btns = "";
