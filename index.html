@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stato Bandi — Tender Specialist</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #f1f5f9;
+      --surface:      #ffffff;
+      --border:       #e2e8f0;
+      --border-mid:   #cbd5e1;
+      --hdr-bg:       #0f172a;
+      --text-1:       #0f172a;
+      --text-2:       #475569;
+      --text-3:       #64748b;
+      --text-muted:   #94a3b8;
+
+      --c-r2dt:       #3b82f6;
+      --c-r2dt-bg:    #eff6ff;
+      --c-r2dt-txt:   #1d4ed8;
+      --c-tat:        #22c55e;
+      --c-tat-bg:     #f0fdf4;
+      --c-tat-txt:    #15803d;
+      --c-pf:         #a855f7;
+      --c-pf-bg:      #faf5ff;
+      --c-pf-txt:     #7e22ce;
+
+      --urg-bg:  #fef2f2; --urg-txt:  #dc2626;
+      --warn-bg: #fffbeb; --warn-txt: #d97706;
+      --ok-bg:   #f0fdf4; --ok-txt:   #16a34a;
+      --past-bg: #f1f5f9; --past-txt: #94a3b8;
+
+      --r-sm: 5px;
+      --r:    8px;
+      --r-lg: 12px;
+      --sh:   0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+      --sh-md:0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.05);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+    }
+
+    /* --- HEADER --- */
+    header {
+      background: var(--hdr-bg);
+      color: #fff;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 10px; }
+    .hdr-logo {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: linear-gradient(135deg,#3b82f6,#6366f1);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hdr-logo svg { width: 14px; height: 14px; fill: #fff; }
+    .hdr-title { font-size: 14px; font-weight: 700; letter-spacing: -.1px; }
+    .hdr-sub   { font-size: 11px; color: #64748b; margin-left: 4px; }
+    .hdr-right { display: flex; align-items: center; gap: 18px; }
+    .hdr-stats { display: flex; gap: 14px; }
+    .stat-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; }
+    .stat-item .n { font-weight: 700; font-size: 12px; }
+    .stat-item.urgent .n { color: #f87171; }
+    .hdr-date { font-size: 11px; color: #475569; }
+
+    /* --- TOOLBAR --- */
+    .toolbar {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      height: 46px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .search-wrap { position: relative; }
+    .search-wrap svg {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      width: 13px; height: 13px; color: var(--text-muted); pointer-events: none;
+    }
+    .search-input {
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-sm);
+      padding: 5px 9px 5px 28px;
+      font-size: 12px;
+      font-family: inherit;
+      width: 210px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .t-sep    { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+    .t-lbl    { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+    .pills    { display: flex; gap: 4px; }
+    .pill {
+      border: 1px solid var(--border-mid);
+      background: #fff;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 11px; font-weight: 600;
+      color: var(--text-2);
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+      transition: all .12s;
+    }
+    .pill:hover { border-color: #94a3b8; color: var(--text-1); }
+    .pill.on { color: #fff; border-color: transparent; }
+    .pill.on.all  { background: #0f172a; }
+    .pill.on.r2dt { background: var(--c-r2dt); }
+    .pill.on.tat  { background: var(--c-tat); }
+    .pill.on.pf   { background: var(--c-pf); }
+    .t-spacer { flex: 1; }
+    .legend   { display: flex; gap: 10px; }
+    .leg-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+    .leg-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* --- BOARD --- */
+    .board {
+      display: flex;
+      gap: 14px;
+      padding: 16px 20px 24px;
+      align-items: flex-start;
+      overflow-x: auto;
+      min-height: calc(100vh - 98px);
+    }
+    .column { flex: 1; min-width: 290px; max-width: 400px; }
+    .col-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 4px 10px;
+    }
+    .col-head-l { display: flex; align-items: center; gap: 7px; }
+    .col-icon svg { width: 14px; height: 14px; color: var(--text-muted); }
+    .col-title { font-weight: 700; font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .7px; }
+    .col-count {
+      background: var(--border); color: var(--text-muted);
+      border-radius: 10px; padding: 1px 8px;
+      font-size: 11px; font-weight: 700; min-width: 22px; text-align: center;
+    }
+    .col-count.hot { background: #fee2e2; color: #dc2626; }
+    .col-body {
+      display: flex; flex-direction: column; gap: 7px; min-height: 60px;
+    }
+
+    /* --- CARDS --- */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 11px 12px;
+      border-left: 3px solid var(--border-mid);
+      box-shadow: var(--sh);
+      cursor: pointer; user-select: none;
+      transition: box-shadow .15s;
+    }
+    .card:hover { box-shadow: var(--sh-md); }
+    .card.r2dt  { border-left-color: var(--c-r2dt); }
+    .card.tat   { border-left-color: var(--c-tat); }
+    .card.pf    { border-left-color: var(--c-pf); }
+    .card.out   { display: none; }
+    .card.muted .card-ente,
+    .card.muted .card-ogg { opacity: .65; }
+
+    .card.esito-vinto    { background: #f0fdf4; border-left-color: #16a34a; }
+    .card.esito-perso    { background: #fef2f2; border-left-color: #dc2626; }
+    .card.esito-attesa   { background: #fffbeb; border-left-color: #d97706; }
+    .card.esito-nessuno  { background: #fffbeb; border-left-color: #d97706; }
+
+    .card-top   { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+    .card-id    { font-family: 'Courier New',monospace; font-size: 10px; color: var(--text-muted); font-weight: 700; flex-shrink: 0; }
+    .card-badges{ display: flex; gap: 4px; margin-left: auto; }
+    .badge {
+      font-size: 10px; font-weight: 700; padding: 1px 6px;
+      border-radius: 10px; white-space: nowrap;
+    }
+    .badge.r2dt { background: var(--c-r2dt-bg); color: var(--c-r2dt-txt); }
+    .badge.tat  { background: var(--c-tat-bg);  color: var(--c-tat-txt); }
+    .badge.pf   { background: var(--c-pf-bg);   color: var(--c-pf-txt); }
+    .badge.none { background: #f1f5f9; color: #9ca3af; }
+    .badge.esito-vinto  { background: #dcfce7; color: #15803d; }
+    .badge.esito-perso  { background: #fee2e2; color: #dc2626; }
+    .badge.esito-attesa { background: #fef3c7; color: #d97706; }
+    .card-ente  { font-weight: 600; font-size: 12.5px; color: var(--text-1); line-height: 1.35; margin-bottom: 4px; }
+    .card-ogg   { font-size: 11.5px; color: var(--text-2); line-height: 1.45; margin-bottom: 8px;
+                  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-foot  { display: flex; align-items: center; gap: 6px; }
+    .scad {
+      font-size: 10.5px; font-weight: 700; padding: 2px 7px;
+      border-radius: var(--r-sm); flex-shrink: 0; white-space: nowrap;
+    }
+    .scad.urgent  { background: var(--urg-bg);  color: var(--urg-txt); }
+    .scad.warning { background: var(--warn-bg); color: var(--warn-txt); }
+    .scad.ok      { background: var(--ok-bg);   color: var(--ok-txt); }
+    .scad.past    { background: var(--past-bg); color: var(--past-txt); }
+    .scad.none    { background: var(--past-bg); color: var(--past-txt); }
+    .card-r     { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+    .comp-txt   { font-size: 11px; color: var(--text-muted); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .inv-txt    { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+    .ico-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 5px;
+      background: none; border: none; cursor: pointer; padding: 0;
+      color: var(--text-muted); flex-shrink: 0;
+      transition: background .12s, color .12s;
+    }
+    .ico-btn:hover { background: var(--bg); color: #3b82f6; }
+    .ico-btn svg   { width: 13px; height: 13px; pointer-events: none; }
+    .empty-ph {
+      border: 2px dashed var(--border-mid); border-radius: var(--r);
+      padding: 22px 10px; text-align: center;
+      font-size: 11.5px; color: var(--text-muted); font-style: italic;
+    }
+
+    /* --- MODAL --- */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 20px;
+      backdrop-filter: blur(2px);
+    }
+    .overlay.hide { display: none; }
+    .modal {
+      background: #fff; border-radius: var(--r-lg);
+      width: 100%; max-width: 580px; max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(15,23,42,.35), 0 8px 20px rgba(15,23,42,.12);
+    }
+    .modal-hdr {
+      padding: 16px 18px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .modal-hdr-info { flex: 1; min-width: 0; }
+    .modal-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .modal-id   { font-family: 'Courier New',monospace; font-size: 11px; color: var(--text-muted); font-weight: 700; }
+    .modal-ente { font-weight: 700; font-size: 15px; color: var(--text-1); line-height: 1.3; }
+    .modal-x {
+      background: none; border: none; cursor: pointer;
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); flex-shrink: 0; margin-top: -2px;
+      transition: background .12s, color .12s;
+    }
+    .modal-x:hover { background: var(--bg); color: var(--text-1); }
+    .modal-x svg { width: 15px; height: 15px; }
+    .modal-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .info-field { display: flex; flex-direction: column; gap: 3px; }
+    .info-field.full { grid-column: 1/-1; }
+    .info-label {
+      font-size: 10.5px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .info-value {
+      font-size: 13px; color: var(--text-1); line-height: 1.5;
+      min-height: 20px; padding: 4px 0;
+    }
+    .info-value.empty { color: var(--text-muted); font-style: italic; }
+    .info-value a { color: #2563eb; text-decoration: none; }
+    .info-value a:hover { text-decoration: underline; }
+    .info-value.note-text { white-space: pre-wrap; font-size: 12.5px; color: var(--text-2); }
+
+    .mf-row {
+      margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+      display: flex; gap: 16px; flex-wrap: wrap;
+    }
+    .mf-item { font-size: 11px; color: var(--text-muted); }
+    .mf-item b { color: var(--text-2); }
+
+    .esito-tag {
+      display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px;
+      border-radius: var(--r-sm);
+    }
+    .esito-tag.vinto  { background: #dcfce7; color: #15803d; }
+    .esito-tag.perso  { background: #fee2e2; color: #dc2626; }
+    .esito-tag.attesa { background: #fef3c7; color: #d97706; }
+    .esito-tag.nd     { background: #f1f5f9; color: #94a3b8; }
+
+    /* --- TOAST --- */
+    #toast {
+      position: fixed; bottom: 22px; left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: #1e293b; color: #fff;
+      padding: 9px 20px; border-radius: var(--r);
+      font-size: 12.5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.25);
+      transition: transform .22s ease;
+      z-index: 9999; white-space: nowrap; pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.err  { background: #dc2626; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <div class="hdr-logo">
+      <svg viewBox="0 0 20 20"><path d="M6 6V5a3 3 0 016 0v1h2a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h2zm2-1a1 1 0 012 0v1H8V5z"/></svg>
+    </div>
+    <span class="hdr-title">Tender Specialist</span>
+    <span class="hdr-sub">Stato Bandi</span>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-stats" id="hdr-stats"></div>
+    <span class="hdr-date" id="hdr-date"></span>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+    <input class="search-input" id="q" type="search" placeholder="Cerca ente o incarico..." autocomplete="off">
+  </div>
+  <div class="t-sep"></div>
+  <span class="t-lbl">Cliente</span>
+  <div class="pills" id="client-pills">
+    <button class="pill on all" data-c="all">Tutti</button>
+    <button class="pill r2dt"   data-c="r2dt">r2dt-audit</button>
+    <button class="pill tat"    data-c="tat">tat-audit</button>
+    <button class="pill pf"     data-c="pf">Trignano</button>
+  </div>
+  <div class="t-spacer"></div>
+  <div class="legend">
+    <span class="leg-item"><span class="leg-dot" style="background:#dc2626"></span>&le;7 gg</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#d97706"></span>&le;14 gg</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#16a34a"></span>&gt;14 gg</span>
+  </div>
+</div>
+
+<div class="board" id="board">
+
+  <div class="column" id="col-da_analizzare">
+    <div class="col-head">
+      <div class="col-head-l">
+        <span class="col-icon">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v7h-2.586l-1.707 1.707A1 1 0 0110 14H8.586l-1.707-1.707A1 1 0 006 12H4V5z" clip-rule="evenodd"/></svg>
+        </span>
+        <span class="col-title">Da analizzare</span>
+      </div>
+      <span class="col-count" id="cnt-da_analizzare">0</span>
+    </div>
+    <div class="col-body" id="body-da_analizzare">
+      <div class="empty-ph">Nessun bando in coda.</div>
+    </div>
+  </div>
+
+  <div class="column" id="col-in_lavorazione">
+    <div class="col-head">
+      <div class="col-head-l">
+        <span class="col-icon">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+        </span>
+        <span class="col-title">In lavorazione</span>
+      </div>
+      <span class="col-count" id="cnt-in_lavorazione">0</span>
+    </div>
+    <div class="col-body" id="body-in_lavorazione">
+      <div class="empty-ph">Nessun bando in lavorazione.</div>
+    </div>
+  </div>
+
+  <div class="column" id="col-inviati">
+    <div class="col-head">
+      <div class="col-head-l">
+        <span class="col-icon">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        </span>
+        <span class="col-title">Inviati</span>
+      </div>
+      <span class="col-count" id="cnt-inviati">0</span>
+    </div>
+    <div class="col-body" id="body-inviati">
+      <div class="empty-ph">Nessun bando inviato.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL (read-only) -->
+<div class="overlay hide" id="overlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-hdr-info">
+        <div class="modal-meta">
+          <span class="modal-id" id="m-id"></span>
+          <span class="badge none" id="m-badge"></span>
+        </div>
+        <div class="modal-ente" id="m-ente"></div>
+      </div>
+      <button class="modal-x" id="modal-x" title="Chiudi (Esc)">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="info-grid">
+        <div class="info-field full">
+          <div class="info-label">Oggetto / Incarico</div>
+          <div class="info-value" id="m-oggetto"></div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Scadenza</div>
+          <div class="info-value" id="m-scadenza"></div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Compenso</div>
+          <div class="info-value" id="m-compenso"></div>
+        </div>
+        <div class="info-field full">
+          <div class="info-label">Piattaforma / Portale</div>
+          <div class="info-value" id="m-piattaforma"></div>
+        </div>
+        <div class="info-field" id="row-invio" style="display:none">
+          <div class="info-label">Data invio</div>
+          <div class="info-value" id="m-data_invio"></div>
+        </div>
+        <div class="info-field" id="row-esito" style="display:none">
+          <div class="info-label">Esito</div>
+          <div class="info-value" id="m-esito"></div>
+        </div>
+        <div class="info-field full" id="row-link" style="display:none">
+          <div class="info-label">Link aggiornamenti</div>
+          <div class="info-value" id="m-link"></div>
+        </div>
+        <div class="info-field full" id="row-note" style="display:none">
+          <div class="info-label">Note</div>
+          <div class="info-value note-text" id="m-note"></div>
+        </div>
+      </div>
+      <div class="mf-row">
+        <span class="mf-item"><b>Cliente:</b> <span id="mf-cliente"></span></span>
+        <span class="mf-item"><b>Stato:</b> <span id="mf-stato"></span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* --- constants --- */
+const SVG_LINK = `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/></svg>`;
+
+/* --- utils --- */
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+function oggi() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+
+function urgCls(scad) {
+  if (!scad) return "none";
+  const d = Math.floor((new Date(scad) - oggi()) / 86400000);
+  if (d < 0)   return "past";
+  if (d <= 7)  return "urgent";
+  if (d <= 14) return "warning";
+  return "ok";
+}
+
+function scadLabel(scad) {
+  if (!scad) return "Scadenza N/D";
+  const [y,m,d] = scad.split("-");
+  const mm = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+  return `Scad. ${+d} ${mm[+m-1]} ${y}`;
+}
+
+function fmtData(iso) {
+  if (!iso) return "";
+  const [y,m,d] = iso.split("-");
+  const mm = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+  return `${+d} ${mm[+m-1]} ${y}`;
+}
+
+function ccls(c) {
+  if (!c) return "none";
+  if (c.includes("r2dt")) return "r2dt";
+  if (c.includes("tat"))  return "tat";
+  if (c.includes("pf_"))  return "pf";
+  return "none";
+}
+function clbl(c) {
+  if (!c) return "—";
+  if (c.includes("r2dt")) return "r2dt-audit";
+  if (c.includes("tat"))  return "tat-audit";
+  if (c.includes("pf_"))  return "Trignano";
+  return c;
+}
+function slbl(s) {
+  if (s === "002") return "In lavorazione";
+  if (s === "003") return "Inviato";
+  if (s === "da_analizzare") return "Da analizzare";
+  return s||"—";
+}
+
+function esitoCls(e) {
+  if (e === "vinto") return "esito-vinto";
+  if (e === "perso") return "esito-perso";
+  if (e === "in_attesa") return "esito-attesa";
+  return "";
+}
+
+function esitoLabel(e) {
+  if (e === "vinto") return "Vinto";
+  if (e === "perso") return "Perso";
+  if (e === "in_attesa") return "In attesa";
+  if (e === "non_comunicato") return "Non comunicato";
+  if (e === "ritirato") return "Ritirato";
+  return "";
+}
+
+/* --- build card --- */
+function mkCard(b) {
+  const cc  = ccls(b.cliente);
+  const urg = urgCls(b.scadenza);
+  const inv = b.stato === "003";
+  const ec  = inv ? esitoCls(b.esito) : "";
+
+  const esitoCard = inv ? (ec || "esito-nessuno") : "";
+  const card = document.createElement("div");
+  card.className = `card ${cc}${(inv || urg==="past") && !esitoCard ? " muted" : ""} ${esitoCard}`.trim();
+  card.dataset.meta = JSON.stringify(b);
+
+  const esitoBadge = (inv && b.esito) ? `<span class="badge ${esitoCls(b.esito)}">${esc(esitoLabel(b.esito))}</span>` : "";
+  const scadCls = inv ? "past" : urg;
+
+  let btns = "";
+  if (b.link_aggiornamenti)
+    btns = `<button class="ico-btn" data-action="link" data-url="${esc(b.link_aggiornamenti)}" title="Apri sito aggiornamenti">${SVG_LINK}</button>`;
+
+  const invHtml  = (inv && b.data_invio) ? `<span class="inv-txt">Inv. ${fmtData(b.data_invio)}</span>` : "";
+  const compHtml = b.compenso ? `<span class="comp-txt" title="${esc(b.compenso)}">${esc(b.compenso)}</span>` : "";
+
+  card.innerHTML = `
+    <div class="card-top">
+      <span class="card-id">${esc(b.id||"—")}</span>
+      <div class="card-badges">${esitoBadge}<span class="badge ${cc}">${clbl(b.cliente)}</span></div>
+    </div>
+    <div class="card-ente">${esc(b.ente||"—")}</div>
+    <div class="card-ogg">${esc(b.oggetto||"—")}</div>
+    <div class="card-foot">
+      <span class="scad ${scadCls}">${scadLabel(b.scadenza)}</span>
+      <div class="card-r">${invHtml}${compHtml}${btns}</div>
+    </div>`;
+  return card;
+}
+
+/* --- render --- */
+function renderCol(key, bandi) {
+  const body = document.getElementById(`body-${key}`);
+  const cnt  = document.getElementById(`cnt-${key}`);
+  body.innerHTML = "";
+  if (!bandi.length) {
+    const ph = document.createElement("div");
+    ph.className = "empty-ph";
+    ph.textContent = key==="da_analizzare" ? "Nessun bando in coda."
+                   : key==="in_lavorazione"? "Nessun bando in lavorazione."
+                   : "Nessun bando inviato.";
+    body.appendChild(ph);
+  } else {
+    bandi.forEach(b => body.appendChild(mkCard(b)));
+  }
+  if (key === "in_lavorazione") {
+    const hot = bandi.filter(b => ["urgent","warning"].includes(urgCls(b.scadenza))).length;
+    cnt.className = hot > 0 ? "col-count hot" : "col-count";
+  }
+  cnt.textContent = bandi.length;
+}
+
+function updateStats(data) {
+  const lav = data.in_lavorazione || [];
+  const urg = lav.filter(b => urgCls(b.scadenza)==="urgent").length;
+  document.getElementById("hdr-stats").innerHTML = `
+    <span class="stat-item ${urg>0?"urgent":""}">
+      <svg style="width:12px;height:12px;fill:#f87171" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+      <span class="n">${urg}</span> urgent${urg===1?"e":"i"}
+    </span>
+    <span class="stat-item">
+      <svg style="width:12px;height:12px;fill:#94a3b8" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      <span class="n">${lav.length}</span> in lavorazione
+    </span>`;
+  if (data.generato) {
+    document.getElementById("hdr-date").textContent = `Aggiornato: ${data.generato}`;
+  }
+}
+
+/* --- filter --- */
+let fClient = "all", fQ = "";
+
+function initClienteFromURL() {
+  const p = new URLSearchParams(location.search);
+  const c = p.get("cliente");
+  if (c) {
+    const map = { r2dt: "r2dt", tat: "tat", pf: "pf", trignano: "pf",
+                  "srl_r2dt-audit": "r2dt", "srl_tat-audit": "tat", "pf_trignano": "pf" };
+    const mapped = map[c.toLowerCase()];
+    if (mapped) {
+      fClient = mapped;
+      document.querySelectorAll(".pill").forEach(p => p.classList.toggle("on", p.dataset.c === fClient));
+    }
+  }
+}
+
+function applyFilter() {
+  document.querySelectorAll(".card").forEach(c => {
+    const m = JSON.parse(c.dataset.meta);
+    const okC = fClient === "all" || ccls(m.cliente) === fClient;
+    const okQ = !fQ
+      || (m.ente||"").toLowerCase().includes(fQ)
+      || (m.oggetto||"").toLowerCase().includes(fQ);
+    c.classList.toggle("out", !(okC && okQ));
+  });
+  ["da_analizzare","in_lavorazione","inviati"].forEach(key => {
+    const vis = document.getElementById(`body-${key}`).querySelectorAll(".card:not(.out)").length;
+    document.getElementById(`cnt-${key}`).textContent = vis;
+  });
+}
+
+document.getElementById("q").addEventListener("input", e => {
+  fQ = e.target.value.toLowerCase().trim();
+  applyFilter();
+});
+document.getElementById("client-pills").addEventListener("click", e => {
+  const btn = e.target.closest(".pill");
+  if (!btn) return;
+  fClient = btn.dataset.c;
+  document.querySelectorAll(".pill").forEach(p => p.classList.toggle("on", p.dataset.c===fClient));
+  applyFilter();
+});
+
+/* --- load data --- */
+function load() {
+  fetch("dashboard-data.json")
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => {
+      renderCol("da_analizzare",  d.da_analizzare  || []);
+      renderCol("in_lavorazione", d.in_lavorazione || []);
+      renderCol("inviati",        d.inviati        || []);
+      updateStats(d);
+      applyFilter();
+    })
+    .catch(() => showToast("Errore nel caricamento dei dati.", true));
+}
+
+/* --- board click delegation --- */
+document.getElementById("board").addEventListener("click", e => {
+  const btn = e.target.closest(".ico-btn");
+  if (btn) {
+    e.stopPropagation();
+    if (btn.dataset.action === "link" && btn.dataset.url)
+      window.open(btn.dataset.url, "_blank", "noopener");
+    return;
+  }
+  const card = e.target.closest(".card");
+  if (card) openModal(card);
+});
+
+/* --- modal (read-only) --- */
+function openModal(card) {
+  const b  = JSON.parse(card.dataset.meta);
+  const cc = ccls(b.cliente);
+
+  document.getElementById("m-id").textContent   = b.id || "ID non assegnato";
+  document.getElementById("m-ente").textContent = b.ente || "—";
+  const badge = document.getElementById("m-badge");
+  badge.className   = `badge ${cc}`;
+  badge.textContent = clbl(b.cliente);
+
+  setField("m-oggetto", b.oggetto);
+  setField("m-scadenza", b.scadenza ? fmtData(b.scadenza) : "");
+  setField("m-compenso", b.compenso);
+  setField("m-piattaforma", b.piattaforma);
+
+  const inv = b.stato === "003";
+  toggleRow("row-invio", inv, "m-data_invio", b.data_invio ? fmtData(b.data_invio) : "");
+  toggleRow("row-esito", inv);
+  if (inv) {
+    const el = document.getElementById("m-esito");
+    const lbl = esitoLabel(b.esito);
+    if (lbl) {
+      const tagCls = esitoCls(b.esito) ? esitoCls(b.esito).replace("esito-","") : "nd";
+      el.innerHTML = `<span class="esito-tag ${tagCls}">${esc(lbl)}</span>`;
+      el.classList.remove("empty");
+    } else {
+      el.textContent = "Da verificare";
+      el.classList.add("empty");
+    }
+  }
+
+  if (b.link_aggiornamenti) {
+    document.getElementById("row-link").style.display = "";
+    document.getElementById("m-link").innerHTML = `<a href="${esc(b.link_aggiornamenti)}" target="_blank" rel="noopener">${esc(b.link_aggiornamenti)}</a>`;
+  } else {
+    document.getElementById("row-link").style.display = "none";
+  }
+
+  toggleRow("row-note", !!b.note, "m-note", b.note);
+
+  document.getElementById("mf-cliente").textContent = clbl(b.cliente);
+  document.getElementById("mf-stato").textContent   = slbl(b.stato);
+
+  document.getElementById("overlay").classList.remove("hide");
+  document.body.style.overflow = "hidden";
+}
+
+function setField(id, value) {
+  const el = document.getElementById(id);
+  el.textContent = value || "—";
+  el.classList.toggle("empty", !value);
+}
+
+function toggleRow(rowId, show, valueId, value) {
+  document.getElementById(rowId).style.display = show ? "" : "none";
+  if (show && valueId) setField(valueId, value);
+}
+
+function closeModal() {
+  document.getElementById("overlay").classList.add("hide");
+  document.body.style.overflow = "";
+}
+
+document.getElementById("modal-x").addEventListener("click", closeModal);
+document.getElementById("overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("overlay")) closeModal();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+/* --- toast --- */
+let _tt = null;
+function showToast(msg, err=false) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `show${err?" err":""}`;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => { el.className = ""; }, 3200);
+}
+
+/* --- init --- */
+initClienteFromURL();
+load();
+</script>
+</body>
+</html>
