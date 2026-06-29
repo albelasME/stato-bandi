@@ -48,6 +48,67 @@
       min-height: 100vh;
     }
 
+    /* --- LOGIN --- */
+    .login-overlay {
+      position: fixed; inset: 0;
+      background: var(--hdr-bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9000;
+    }
+    .login-overlay.hide { display: none; }
+    .login-box {
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      padding: 36px 32px 32px;
+      width: 100%; max-width: 380px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+    .login-logo {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: linear-gradient(135deg,#3b82f6,#6366f1);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .login-logo svg { width: 22px; height: 22px; fill: #fff; }
+    .login-title {
+      text-align: center; font-size: 18px; font-weight: 700;
+      color: var(--text-1); margin-bottom: 4px;
+    }
+    .login-sub {
+      text-align: center; font-size: 13px; color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .login-field { margin-bottom: 14px; }
+    .login-label {
+      display: block; font-size: 11px; font-weight: 600;
+      color: var(--text-3); text-transform: uppercase;
+      letter-spacing: .5px; margin-bottom: 5px;
+    }
+    .login-input {
+      width: 100%; border: 1px solid var(--border-mid);
+      border-radius: var(--r-sm); padding: 9px 12px;
+      font-size: 14px; font-family: inherit; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .login-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    .login-btn {
+      width: 100%; padding: 10px; border: none;
+      border-radius: var(--r-sm); background: #3b82f6;
+      color: #fff; font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: background .15s;
+      margin-top: 6px;
+    }
+    .login-btn:hover { background: #2563eb; }
+    .login-btn:disabled { background: #94a3b8; cursor: wait; }
+    .login-err {
+      text-align: center; font-size: 12px; color: #dc2626;
+      margin-top: 12px; min-height: 18px;
+    }
+
     /* --- HEADER --- */
     header {
       background: var(--hdr-bg);
@@ -76,6 +137,12 @@
     .stat-item .n { font-weight: 700; font-size: 12px; }
     .stat-item.urgent .n { color: #f87171; }
     .hdr-date { font-size: 11px; color: #475569; }
+    .hdr-user {
+      font-size: 11px; color: #94a3b8; background: rgba(255,255,255,.08);
+      padding: 3px 10px; border-radius: 12px; cursor: pointer;
+      transition: background .12s;
+    }
+    .hdr-user:hover { background: rgba(255,255,255,.15); }
 
     /* --- TOOLBAR --- */
     .toolbar {
@@ -302,9 +369,38 @@
     }
     #toast.show { transform: translateX(-50%) translateY(0); }
     #toast.err  { background: #dc2626; }
+
+    .app-wrap { display: none; }
+    .app-wrap.visible { display: block; }
   </style>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 20 20"><path d="M6 6V5a3 3 0 016 0v1h2a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h2zm2-1a1 1 0 012 0v1H8V5z"/></svg>
+    </div>
+    <div class="login-title">Tender Specialist</div>
+    <div class="login-sub">Accedi per visualizzare lo stato dei bandi</div>
+    <form id="login-form" autocomplete="on">
+      <div class="login-field">
+        <label class="login-label" for="login-user">Utente</label>
+        <input class="login-input" id="login-user" type="text" name="username" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="login-pass">Password</label>
+        <input class="login-input" id="login-pass" type="password" name="password" autocomplete="current-password" required>
+      </div>
+      <button class="login-btn" type="submit" id="login-btn">Accedi</button>
+    </form>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app-wrap" id="app-wrap">
 
 <header>
   <div class="hdr-left">
@@ -317,6 +413,7 @@
   <div class="hdr-right">
     <div class="hdr-stats" id="hdr-stats"></div>
     <span class="hdr-date" id="hdr-date"></span>
+    <span class="hdr-user" id="hdr-user" title="Esci"></span>
   </div>
 </header>
 
@@ -389,6 +486,7 @@
   </div>
 
 </div>
+</div><!-- /app-wrap -->
 
 <!-- MODAL (read-only) -->
 <div class="overlay hide" id="overlay">
@@ -451,6 +549,33 @@
 <div id="toast"></div>
 
 <script>
+/* --- crypto --- */
+function b64ToBuffer(b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf;
+}
+
+async function decryptData(encrypted, password) {
+  const salt = b64ToBuffer(encrypted.salt);
+  const iv   = b64ToBuffer(encrypted.iv);
+  const data = b64ToBuffer(encrypted.data);
+
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 600000, hash: "SHA-256" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
 /* --- constants --- */
 const SVG_LINK = `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/></svg>`;
 
@@ -594,22 +719,16 @@ function updateStats(data) {
   }
 }
 
+function renderDashboard(data) {
+  renderCol("da_analizzare",  data.da_analizzare  || []);
+  renderCol("in_lavorazione", data.in_lavorazione || []);
+  renderCol("inviati",        data.inviati        || []);
+  updateStats(data);
+  applyFilter();
+}
+
 /* --- filter --- */
 let fClient = "all", fQ = "";
-
-function initClienteFromURL() {
-  const p = new URLSearchParams(location.search);
-  const c = p.get("cliente");
-  if (c) {
-    const map = { r2dt: "r2dt", tat: "tat", pf: "pf", trignano: "pf",
-                  "srl_r2dt-audit": "r2dt", "srl_tat-audit": "tat", "pf_trignano": "pf" };
-    const mapped = map[c.toLowerCase()];
-    if (mapped) {
-      fClient = mapped;
-      document.querySelectorAll(".pill").forEach(p => p.classList.toggle("on", p.dataset.c === fClient));
-    }
-  }
-}
 
 function applyFilter() {
   document.querySelectorAll(".card").forEach(c => {
@@ -638,19 +757,65 @@ document.getElementById("client-pills").addEventListener("click", e => {
   applyFilter();
 });
 
-/* --- load data --- */
-function load() {
-  fetch("dashboard-data.json")
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(d => {
-      renderCol("da_analizzare",  d.da_analizzare  || []);
-      renderCol("in_lavorazione", d.in_lavorazione || []);
-      renderCol("inviati",        d.inviati        || []);
-      updateStats(d);
-      applyFilter();
-    })
-    .catch(() => showToast("Errore nel caricamento dei dati.", true));
+/* --- auth + load --- */
+async function attemptLogin(username, password) {
+  const file = `data-${username.toLowerCase().trim()}.json`;
+  const resp = await fetch(file);
+  if (!resp.ok) throw new Error("user");
+  const encrypted = await resp.json();
+  try {
+    return await decryptData(encrypted, password);
+  } catch {
+    throw new Error("password");
+  }
 }
+
+function showApp(username) {
+  document.getElementById("login-overlay").classList.add("hide");
+  document.getElementById("app-wrap").classList.add("visible");
+  document.getElementById("hdr-user").textContent = username;
+}
+
+function logout() {
+  sessionStorage.removeItem("ts_user");
+  sessionStorage.removeItem("ts_pass");
+  document.getElementById("login-overlay").classList.remove("hide");
+  document.getElementById("app-wrap").classList.remove("visible");
+  document.getElementById("login-user").value = "";
+  document.getElementById("login-pass").value = "";
+  document.getElementById("login-err").textContent = "";
+}
+
+document.getElementById("hdr-user").addEventListener("click", logout);
+
+document.getElementById("login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn  = document.getElementById("login-btn");
+  const err  = document.getElementById("login-err");
+  const user = document.getElementById("login-user").value;
+  const pass = document.getElementById("login-pass").value;
+
+  btn.disabled = true;
+  btn.textContent = "Verifica...";
+  err.textContent = "";
+
+  try {
+    const data = await attemptLogin(user, pass);
+    sessionStorage.setItem("ts_user", user.toLowerCase().trim());
+    sessionStorage.setItem("ts_pass", pass);
+    showApp(user.toLowerCase().trim());
+    renderDashboard(data);
+  } catch (ex) {
+    if (ex.message === "user") {
+      err.textContent = "Utente non trovato.";
+    } else {
+      err.textContent = "Password non corretta.";
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Accedi";
+  }
+});
 
 /* --- board click delegation --- */
 document.getElementById("board").addEventListener("click", e => {
@@ -745,9 +910,21 @@ function showToast(msg, err=false) {
   _tt = setTimeout(() => { el.className = ""; }, 3200);
 }
 
-/* --- init --- */
-initClienteFromURL();
-load();
+/* --- init: auto-login from session --- */
+(async () => {
+  const savedUser = sessionStorage.getItem("ts_user");
+  const savedPass = sessionStorage.getItem("ts_pass");
+  if (savedUser && savedPass) {
+    try {
+      const data = await attemptLogin(savedUser, savedPass);
+      showApp(savedUser);
+      renderDashboard(data);
+    } catch {
+      sessionStorage.removeItem("ts_user");
+      sessionStorage.removeItem("ts_pass");
+    }
+  }
+})();
 </script>
 </body>
 </html>
